@@ -1,7 +1,12 @@
+using Canale_Live.Controllers.Getters;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IProxyGetter, ProxyGetter>();
+builder.Configuration.AddJsonFile("appsettings.json");
 
 var app = builder.Build();
 
@@ -25,13 +30,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
-    name: "Media3",
-    pattern: "{controller=Media}/{a}/{b}/{c}",
-    defaults: new { controller = "Media", action = "Index3"});
-
-app.MapControllerRoute(
     name: "Media4",
-    pattern: "{controller=Media}/{a}/{b}/{c}/{d}",
+    pattern: "{controller=Media}/{a}/{b}/{c}/{d?}",
     defaults: new { controller = "Media", action = "Index4" });
 
 app.MapControllerRoute(

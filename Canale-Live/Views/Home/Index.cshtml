@@ -1,13 +1,14 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model Canale_Live.Models.ChannelModel
+
+@{
+    ViewData["Title"] = @Model.ChannelName;
 }
 
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lozad/dist/lozad.min.js"></script>
 <script type="text/javascript" src="~/js/clappr.min.js"></script>
 
-@*source: "https://webdi.openhd.lol/cdn/antena3/index.m3u8",*@
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
+    <h1 class="display-4">@Model.ChannelName</h1>
       <div class="player player-ch">
                 <div class="wrap-play">
                     <div class="play-up">
@@ -17,7 +18,7 @@
                         <script>
                             document.addEventListener("DOMContentLoaded", function loadPlayr() {
                                 window.player = new Clappr.Player({
-                                    source: "https://localhost:7260/Media/cdn/antena3/index.m3u8",
+                                    source: "@Model.HostUrl",
                                     parentId: "#player",
                                     autoplay: "true",
                                     width: "800px",
