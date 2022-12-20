@@ -34,6 +34,7 @@ namespace Canale_Live.Controllers
                 var tracks = ProxyGetter.GetSingleton().RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}/{d}");
                 var replacedTracks = ReplaceTracks(tracks);
                 return Content(tracks);
+                //return Content(replacedTracks);
             }
 
             return null;
@@ -52,6 +53,7 @@ namespace Canale_Live.Controllers
                 if (!item.StartsWith("#"))
                 {
                     var newLocation = $"https://{domain}/cdn/8/tracks-v1a1/{item}";
+                    newLocation = newLocation.Replace(".ts", ".js");
                     sb.Append(newLocation);
                 }
                 else
@@ -61,7 +63,7 @@ namespace Canale_Live.Controllers
         }
 
 
-        public async Task<FileContentResult> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
+        public async Task<FileStreamResult> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
             var context = this.ControllerContext;
 
@@ -69,11 +71,28 @@ namespace Canale_Live.Controllers
             {
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
                 var domain = _proxy.RefererGetRequest(domainUrl);
-                var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}";
-                var binaryContent = await _proxy.GetTs(location);
-              
-                //System.IO.File.WriteAllBytes($@"C:\tmp\{i}", binaryContent);
-                return File(binaryContent, "application/octet-stream");
+                var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+                var binaryContent = await _proxy.GetTss(location).ConfigureAwait(false);                
+                if (binaryContent!= null)
+                  return File(binaryContent, "application/octet-stream");
+            }
+
+            return null;
+        }
+
+
+        public async Task<FileContentResult> Index19(string a, string b, string c, string d, string e, string f, string g, string h, string i)
+        {
+            var context = this.ControllerContext;
+
+            if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
+            {
+                var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
+                var domain = _proxy.RefererGetRequest(domainUrl);
+                var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+                var binaryContent = await _proxy.GetTs(location).ConfigureAwait(false);
+                if (binaryContent != null)
+                    return File(binaryContent, "application/octet-stream");
             }
 
             return null;

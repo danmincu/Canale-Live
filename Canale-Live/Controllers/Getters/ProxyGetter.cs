@@ -7,6 +7,7 @@ namespace Canale_Live.Controllers.Getters
     {
         string? RefererGetRequest(string uri);
         Task<byte[]?> GetTs(string uri);
+        Task<Stream?> GetTss(string uri);
     }
 
     public class ProxyGetter : IProxyGetter
@@ -31,14 +32,22 @@ namespace Canale_Live.Controllers.Getters
             return response?.Content?.ToString();
         }
 
-        public async Task<byte[]?> GetTs(string uri)
+        public async Task<Stream?> GetTss(string uri)
         {
             var client = new RestClient();
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
-            
-            return await client.DownloadDataAsync(request).ConfigureAwait(false);
+            return await client.DownloadStreamAsync(request).ConfigureAwait(false);
+            //return await client.DownloadDataAsync(request).ConfigureAwait(false);
 
+        }
+
+        public async Task<byte[]?> GetTs(string uri)
+        {
+            var client = new RestClient();
+            var request = new RestRequest(uri, Method.Get);
+            this.ApplyHeaders(request);
+            return await client.DownloadDataAsync(request).ConfigureAwait(false);
         }
 
         private void ApplyHeaders(RestRequest request)

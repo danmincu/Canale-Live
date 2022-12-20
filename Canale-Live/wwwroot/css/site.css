@@ -1,27 +1,65 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
 }
 
 ul li {
     display: inline-block;
     float: none !important;
-    font-size: 8px;
+    font-size: 12px;
 }
+
+.pagination {
+    margin: 0;
+    padding: 0;
+}
+
+    .pagination li {
+        display: inline;
+        padding: 6px 1px 6px 1px;
+        border: 2px solid #ddd;
+        margin-right: -1px;
+        font: 14px/12px Arial, Helvetica, sans-serif;
+        background: #a9aad8;
+    }
+
+        .pagination li a {
+            text-decoration: none;
+            color: rgb(89, 141, 235);
+        }
+
+        .pagination li.first {
+            border-radius: 5px 0px 0px 5px;
+        }
+
+        .pagination li.last {
+            border-radius: 0px 5px 5px 0px;
+        }
+
+        .pagination li:hover {
+            background: rgb(116, 155, 225);
+        }
+
+        .pagination li.current {
+            background: #89B3CC;
+            border: 1px solid #89B3CC;
+            color: #FFFFFF;
+        }
+
 
 /*header {
     overflow:scroll;
