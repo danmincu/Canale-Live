@@ -3,16 +3,17 @@
 namespace Canale_Live.Controllers.Getters
 {
 
-    public interface IProxyGetter
+    public interface IProxyGetter: IDisposable
     {
         string? RefererGetRequest(string uri);
-        Task<byte[]?> GetTs(string uri);
+        byte[] GetTs(string uri);
         Task<Stream?> GetTss(string uri);
     }
 
     public class ProxyGetter : IProxyGetter
     {
         static ProxyGetter? _singleton = null;
+        private readonly RestClient _client;
 
         public static ProxyGetter GetSingleton()
         {
@@ -34,20 +35,21 @@ namespace Canale_Live.Controllers.Getters
 
         public async Task<Stream?> GetTss(string uri)
         {
-            var client = new RestClient();
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
-            return await client.DownloadStreamAsync(request).ConfigureAwait(false);
-            //return await client.DownloadDataAsync(request).ConfigureAwait(false);
-
+            return await _client!.DownloadStreamAsync(request).ConfigureAwait(false);
         }
 
-        public async Task<byte[]?> GetTs(string uri)
+        public ProxyGetter()
         {
-            var client = new RestClient();
+            _client = new RestClient();
+        }
+
+        public byte[] GetTs(string uri)
+        {
             var request = new RestRequest(uri, Method.Get);
             this.ApplyHeaders(request);
-            return await client.DownloadDataAsync(request).ConfigureAwait(false);
+            return _client!.DownloadData(request);
         }
 
         private void ApplyHeaders(RestRequest request)
@@ -66,7 +68,10 @@ namespace Canale_Live.Controllers.Getters
             request.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36");
         }
 
+        public void Dispose()
+        {
+            _client?.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
-
-
 }

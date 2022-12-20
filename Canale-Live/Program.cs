@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSingleton<IProxyGetter, ProxyGetter>();
+builder.Services.AddScoped<IProxyGetter, ProxyGetter>();
 builder.Configuration.AddJsonFile("appsettings.json");
 
 var app = builder.Build();

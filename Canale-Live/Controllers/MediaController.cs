@@ -81,7 +81,7 @@ namespace Canale_Live.Controllers
         }
 
 
-        public async Task<FileContentResult> Index19(string a, string b, string c, string d, string e, string f, string g, string h, string i)
+        public FileContentResult Index_not_efficient(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
             var context = this.ControllerContext;
 
@@ -90,7 +90,8 @@ namespace Canale_Live.Controllers
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
                 var domain = _proxy.RefererGetRequest(domainUrl);
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-                var binaryContent = await _proxy.GetTs(location).ConfigureAwait(false);
+                var binaryContent = _proxy.GetTs(location);
+
                 if (binaryContent != null)
                     return File(binaryContent, "application/octet-stream");
             }
