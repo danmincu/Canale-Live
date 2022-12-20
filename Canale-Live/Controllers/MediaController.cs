@@ -50,12 +50,7 @@ namespace Canale_Live.Controllers
 
             if (d == null && c.Contains("index", StringComparison.InvariantCultureIgnoreCase))
             {
-
-                //https://zcri.openhd.lol/lb/8/index.m3u8
-
-                //var index = ProxyGetter.GetSingleton().RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}");
-
-                var index = ProxyGetter.GetSingleton().RefererGetRequest($"https://zcri.openhd.lol/{a}/{b}/{c}", out RedirectInfo mediaRedirect);
+                var index = _proxy.RefererGetRequest($"https://zcri.openhd.lol/{a}/{b}/{c}", out RedirectInfo mediaRedirect);
                 if (mediaRedirect != null)
                 {
                     mediaRedirect.A = a;
@@ -92,7 +87,7 @@ namespace Canale_Live.Controllers
                     var media_redirects = _redirectCollection.RedirCollection[b];
                     a = media_redirects.ToA;
                 }
-                var tracks = ProxyGetter.GetSingleton().RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect);
+                var tracks = _proxy.RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect);
                 //var replacedTracks = ReplaceTracks(tracks);
                 return Content(tracks!);
                 //return Content(replacedTracks);
@@ -157,18 +152,27 @@ namespace Canale_Live.Controllers
                
                 var binaryContent = await _proxy.GetTss(location, func).ConfigureAwait(false);
 
+                bool flipped = false;
+                var location1 = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
                 if (code?.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    location = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-                    binaryContent = await _proxy.GetTss(location, func).ConfigureAwait(false);
+                    binaryContent = await _proxy.GetTss(location1, func).ConfigureAwait(false);
                     if (code.StatusCode == System.Net.HttpStatusCode.OK)
                     {
-                        _redirectCollection.MediaFlips.TryAdd(b, true);                        
+                        _redirectCollection.MediaFlips.TryAdd(b, true);
+                        flipped = true;
                     }
                     else
                         _redirectCollection.MediaFlips.TryAdd(b, false);
                 }
 
+                if (flipped)
+                    _logger.LogInformation($"Flip detected:{location} => {location1}");
+
+                if (code.StatusCode != System.Net.HttpStatusCode.OK && code.StatusCode != System.Net.HttpStatusCode.Accepted)
+                {
+                    _logger.LogError($"[{code.StatusCode}]:{location}");
+                }
 
                 if (binaryContent!= null)
                   return File(binaryContent, "application/octet-stream");
@@ -178,23 +182,23 @@ namespace Canale_Live.Controllers
         }
 
 
-        public FileContentResult Index_not_efficient(string a, string b, string c, string d, string e, string f, string g, string h, string i)
-        {
-            var context = this.ControllerContext;
+        //public FileContentResult Index_not_efficient(string a, string b, string c, string d, string e, string f, string g, string h, string i)
+        //{
+        //    var context = this.ControllerContext;
 
-            if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
-            {
-                var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl);
-                var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-                var binaryContent = _proxy.GetTs(location);
+        //    if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
+        //    {
+        //        var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
+        //        var domain = _proxy.RefererGetRequest(domainUrl);
+        //        var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+        //        var binaryContent = _proxy.GetTs(location);
 
-                if (binaryContent != null)
-                    return File(binaryContent, "application/octet-stream");
-            }
+        //        if (binaryContent != null)
+        //            return File(binaryContent, "application/octet-stream");
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
     }
 }

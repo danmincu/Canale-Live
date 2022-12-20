@@ -14,17 +14,17 @@ namespace Canale_Live.Controllers.Getters
 
     public class ProxyGetter : IProxyGetter
     {
+        
         static ProxyGetter? _singleton = null;
+        private ILogger<ProxyGetter> _logger;
         private readonly RestClient _client;
 
-        public static ProxyGetter GetSingleton()
+        public ProxyGetter(ILogger<ProxyGetter> logger)
         {
-            if (_singleton == null)
-            {
-                _singleton = new ProxyGetter();
-            }
-            return _singleton;
+            _logger = logger;
+            _client = new RestClient(new RestClientOptions() { FollowRedirects = false });
         }
+
 
         public string? RefererGetRequest(string uri)
         {
@@ -42,10 +42,17 @@ namespace Canale_Live.Controllers.Getters
             if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved)
             {
                 var newUri = (string)response?.Headers?.Where(h => h.Name == "Location")?.FirstOrDefault()?.Value;
+                _logger.LogInformation($"301 Redirect detected:{uri} => {newUri}");
                 redirect = new RedirectInfo { FromUrl = uri, ToUrl = newUri };
+                uri = newUri;
                 request = new RestRequest(newUri, Method.Get);
-                this.ApplyHeaders(request);
+                this.ApplyHeaders(request);                
                 response = client.Execute(request);
+            }
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK && response.StatusCode != System.Net.HttpStatusCode.Accepted)
+            {
+                _logger.LogError($"[{response.StatusCode}]:{uri}");
             }
 
             return response?.Content?.ToString();
@@ -57,19 +64,11 @@ namespace Canale_Live.Controllers.Getters
             this.ApplyHeaders(request);
 
             request.OnAfterRequest = afterRequest;
-                //(r) =>
-                //{
-                //    return new ValueTask(Task.FromResult<string>(r.ToString()));
-                //};
 
             return await _client!.DownloadStreamAsync(request).ConfigureAwait(false);
         }
 
-        public ProxyGetter()
-        {
-            _client = new RestClient(new RestClientOptions() { FollowRedirects = false });
-        }
-
+        
         public byte[] GetTs(string uri)
         {
             var request = new RestRequest(uri, Method.Get);
