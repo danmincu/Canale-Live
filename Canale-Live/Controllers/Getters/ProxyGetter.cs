@@ -36,6 +36,7 @@ namespace Canale_Live.Controllers.Getters
             var client = new RestClient();
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
+            
             return await client.DownloadDataAsync(request).ConfigureAwait(false);
 
         }

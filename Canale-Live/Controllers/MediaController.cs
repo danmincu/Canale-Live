@@ -1,5 +1,6 @@
 ﻿using Canale_Live.Controllers.Getters;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace Canale_Live.Controllers
 {
@@ -31,11 +32,34 @@ namespace Canale_Live.Controllers
             if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && d.Contains("m3u8", StringComparison.InvariantCultureIgnoreCase))
             {
                 var tracks = ProxyGetter.GetSingleton().RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}/{d}");
+                var replacedTracks = ReplaceTracks(tracks);
                 return Content(tracks);
             }
 
             return null;
         }
+
+
+        private string ReplaceTracks(string tracks)
+        {
+            var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
+            var domain = _proxy.RefererGetRequest(domainUrl);
+
+            var lines = tracks.Split("\n");
+            var sb = new StringBuilder();
+            foreach (var item in lines)
+            {
+                if (!item.StartsWith("#"))
+                {
+                    var newLocation = $"https://{domain}/cdn/8/tracks-v1a1/{item}";
+                    sb.Append(newLocation);
+                }
+                else
+                    sb.AppendLine(item);
+            }
+            return sb.ToString();
+        }
+
 
         public async Task<FileContentResult> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
@@ -47,6 +71,7 @@ namespace Canale_Live.Controllers
                 var domain = _proxy.RefererGetRequest(domainUrl);
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}";
                 var binaryContent = await _proxy.GetTs(location);
+              
                 //System.IO.File.WriteAllBytes($@"C:\tmp\{i}", binaryContent);
                 return File(binaryContent, "application/octet-stream");
             }
