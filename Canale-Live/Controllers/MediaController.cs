@@ -122,10 +122,11 @@ namespace Canale_Live.Controllers
         public async Task<FileStreamResult?> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
             var context = this.ControllerContext;
+            var attempts = 0;
 
             if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
             {
-                if (_redirectCollection.RedirCollection.ContainsKey(b))
+             repeat:if (_redirectCollection.RedirCollection.ContainsKey(b))
                 {
                     var media_redirects = _redirectCollection.RedirCollection[b];
                     a = media_redirects.ToA;
@@ -133,9 +134,6 @@ namespace Canale_Live.Controllers
 
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
                 var domain = _proxy.RefererGetRequest(domainUrl);
-
-
-                
 
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
 
@@ -154,7 +152,7 @@ namespace Canale_Live.Controllers
 
                 bool flipped = false;
                 var location1 = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-                if (code?.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (code?.StatusCode == System.Net.HttpStatusCode.NotFound && (!_redirectCollection.MediaFlips.TryGetValue(b, out bool val1) || !val1))
                 {
                     binaryContent = await _proxy.GetTss(location1, func).ConfigureAwait(false);
                     if (code.StatusCode == System.Net.HttpStatusCode.OK)
@@ -172,6 +170,8 @@ namespace Canale_Live.Controllers
                 if (code.StatusCode != System.Net.HttpStatusCode.OK && code.StatusCode != System.Net.HttpStatusCode.Accepted)
                 {
                     _logger.LogError($"[{code.StatusCode}]:{location}");
+                    if (attempts++ < 3)
+                      goto repeat;
                 }
 
                 if (binaryContent!= null)

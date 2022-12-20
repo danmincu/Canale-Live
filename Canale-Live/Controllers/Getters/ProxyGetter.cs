@@ -4,17 +4,17 @@ using System.Collections.Concurrent;
 namespace Canale_Live.Controllers.Getters
 {
 
-    public interface IProxyGetter: IDisposable
+    public interface IProxyGetter : IDisposable
     {
         string? RefererGetRequest(string uri, out RedirectInfo redirect);
         string? RefererGetRequest(string uri);
         byte[] GetTs(string uri);
-        Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null);
+        Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask>? afterRequest = null);
     }
 
     public class ProxyGetter : IProxyGetter
     {
-        
+
         static ProxyGetter? _singleton = null;
         private ILogger<ProxyGetter> _logger;
         private readonly RestClient _client;
@@ -33,11 +33,12 @@ namespace Canale_Live.Controllers.Getters
 
         public string? RefererGetRequest(string uri, out RedirectInfo redirect)
         {
+            var attempts = 0;
             redirect = null;
-            var client = new RestClient(new RestClientOptions() { FollowRedirects = false });
-            var request = new RestRequest(uri, Method.Get);
+            //var client = new RestClient(new RestClientOptions() { FollowRedirects = false });
+            tryagain: var request = new RestRequest(uri, Method.Get);
             this.ApplyHeaders(request);
-            RestResponse response = client.Execute(request);
+            RestResponse response = _client.Execute(request);
 
             if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved)
             {
@@ -46,13 +47,15 @@ namespace Canale_Live.Controllers.Getters
                 redirect = new RedirectInfo { FromUrl = uri, ToUrl = newUri };
                 uri = newUri;
                 request = new RestRequest(newUri, Method.Get);
-                this.ApplyHeaders(request);                
-                response = client.Execute(request);
+                this.ApplyHeaders(request);
+                response = _client.Execute(request);
             }
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK && response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {
                 _logger.LogError($"[{response.StatusCode}]:{uri}");
+                if (attempts++ < 2)
+                 goto tryagain;
             }
 
             return response?.Content?.ToString();
@@ -63,12 +66,15 @@ namespace Canale_Live.Controllers.Getters
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
 
-            request.OnAfterRequest = afterRequest;
+            if (afterRequest != null)
+            {
+                request.OnAfterRequest = afterRequest;
+            }
 
             return await _client!.DownloadStreamAsync(request).ConfigureAwait(false);
         }
 
-        
+
         public byte[] GetTs(string uri)
         {
             var request = new RestRequest(uri, Method.Get);
