@@ -119,7 +119,7 @@ namespace Canale_Live.Controllers
         //}
 
 
-        public async Task<FileStreamResult?> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
+        public async Task<IActionResult> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
             var context = this.ControllerContext;
             var attempts = 0;
@@ -167,7 +167,7 @@ namespace Canale_Live.Controllers
                 if (flipped)
                     _logger.LogInformation($"Flip detected:{location} => {location1}");
 
-                if (code.StatusCode != System.Net.HttpStatusCode.OK && code.StatusCode != System.Net.HttpStatusCode.Accepted)
+                if (code.StatusCode != System.Net.HttpStatusCode.NotFound && code.StatusCode != System.Net.HttpStatusCode.OK && code.StatusCode != System.Net.HttpStatusCode.Accepted)
                 {
                     _logger.LogError($"[{code.StatusCode}]:{location}");
                     if (attempts++ < 3)
@@ -178,7 +178,7 @@ namespace Canale_Live.Controllers
                   return File(binaryContent, "application/octet-stream");
             }
 
-            return null;
+            return NotFound();
         }
 
 

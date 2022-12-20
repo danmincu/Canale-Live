@@ -57,12 +57,13 @@ namespace Canale_Live.Controllers.Getters
                 if (attempts++ < 2)
                  goto tryagain;
             }
-
+            _logger.LogInformation($"fetting Info stream: {uri}");
             return response?.Content?.ToString();
         }
 
         public async Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null)
         {
+            _logger.LogInformation($"fetting TS stream: {uri}");
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
 
@@ -84,7 +85,7 @@ namespace Canale_Live.Controllers.Getters
 
         private void ApplyHeaders(RestRequest request)
         {
-            request.Timeout = -1;
+            request.Timeout = 2500;
             request.AddHeader("accept", "*/*");
             request.AddHeader("accept-language", "en-US,en;q=0.9,ro;q=0.8");
             request.AddHeader("origin", "https://canale.live");
