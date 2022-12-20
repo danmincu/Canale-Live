@@ -7,19 +7,12 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Canale_Live.styles.css" asp-append-version="true" />
-
-    <style type="text/css" >
-   #testmenu ul li {
-      display:inline-block;
-      float:none !important;
-   }
-</style> 
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">TV RO</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index" style="Font-Size:30px">TVRO</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -28,10 +21,14 @@
                     <ul class="navbar-nav flex-grow-1 pagination">
                         @foreach (var keyValuePair in ((IDictionary<string, string>)ViewData["channelIds"]).OrderBy(kvp => kvp.Value))
                         {
-                              <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index" asp-route-id=@keyValuePair.Key>@keyValuePair.Value</a>
+                              <li class="nav-item" id="li-@keyValuePair.Key">
+
+
+                                  <a class="@("nav-link text-dark  " + (@keyValuePair.Key == (string)@ViewData["channelId"] ? "selected-nav-item" : ""))"
+                                      asp-area="" asp-controller="Home" asp-action="Index" asp-route-id=@keyValuePair.Key>@keyValuePair.Value</a>
+                                  @*<a class="nav-link text-dark selected-nav-item" asp-area="" asp-controller="Home" asp-action="Index" asp-route-id=@keyValuePair.Key>@keyValuePair.Value</a>*@
                                </li> 
-                        }
+                        }                         
                     </ul>
                 </div>
             </div>
@@ -48,9 +45,22 @@
             &copy; 2022 - danix13
         </div>
     </footer>
+
+
+      <script>
+document.addEventListener("DOMContentLoaded", function loadPlayr() {
+    let element = document.getElementById('li-'+'@ViewData["channelId"]');
+    //let a = element.innerHTML;
+    //alert(a);
+    element.scrollIntoView({behavior: "auto", block: "end", inline: "center"});
+    
+});
+                        </script>
+
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>   
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

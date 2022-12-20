@@ -27,8 +27,9 @@ namespace Canale_Live.Controllers
 
         public IActionResult Index(string? id)
         {
-            ViewData["channelIds"] = _channels;// from c in _channels.Keys select c; 
+            ViewData["channelIds"] = _channels;// from c in _channels.Keys select c;             
             var key = id ?? "8";
+            ViewData["channelId"] = key;
             var location = new Uri($"{Request.Scheme}://{Request.Host}{Request.Path}{Request.QueryString}");
             ChannelModel channel;
             if (_channels.ContainsKey(key))
