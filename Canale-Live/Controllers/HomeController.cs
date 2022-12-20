@@ -36,7 +36,7 @@ namespace Canale_Live.Controllers
               channel = new ChannelModel() { ChannelId = key, ChannelName = _channels[key] };
             else 
               channel = new ChannelModel() { ChannelId = key, ChannelName = key };
-            channel.HostUrl = $"{location.Scheme}://{location.Authority}/Media/cdn/{channel.ChannelId}/index.m3u8";
+            channel.HostUrl = $"{location.Scheme}://{location.Authority}/Media/lb/{channel.ChannelId}/index.m3u8";
             return View("Index", channel);
         }
 

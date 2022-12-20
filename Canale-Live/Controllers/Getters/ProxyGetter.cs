@@ -1,13 +1,15 @@
 ﻿using RestSharp;
+using System.Collections.Concurrent;
 
 namespace Canale_Live.Controllers.Getters
 {
 
     public interface IProxyGetter: IDisposable
     {
+        string? RefererGetRequest(string uri, out RedirectInfo redirect);
         string? RefererGetRequest(string uri);
         byte[] GetTs(string uri);
-        Task<Stream?> GetTss(string uri);
+        Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null);
     }
 
     public class ProxyGetter : IProxyGetter
@@ -26,23 +28,46 @@ namespace Canale_Live.Controllers.Getters
 
         public string? RefererGetRequest(string uri)
         {
-            var client = new RestClient();
+            return this.RefererGetRequest(uri, out RedirectInfo redirect);
+        }
+
+        public string? RefererGetRequest(string uri, out RedirectInfo redirect)
+        {
+            redirect = null;
+            var client = new RestClient(new RestClientOptions() { FollowRedirects = false });
             var request = new RestRequest(uri, Method.Get);
             this.ApplyHeaders(request);
             RestResponse response = client.Execute(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved)
+            {
+                var newUri = (string)response?.Headers?.Where(h => h.Name == "Location")?.FirstOrDefault()?.Value;
+                redirect = new RedirectInfo { FromUrl = uri, ToUrl = newUri };
+                request = new RestRequest(newUri, Method.Get);
+                this.ApplyHeaders(request);
+                response = client.Execute(request);
+            }
+
             return response?.Content?.ToString();
         }
 
-        public async Task<Stream?> GetTss(string uri)
+        public async Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null)
         {
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
             this.ApplyHeaders(request);
+
+            request.OnAfterRequest = afterRequest;
+                //(r) =>
+                //{
+                //    return new ValueTask(Task.FromResult<string>(r.ToString()));
+                //};
+
             return await _client!.DownloadStreamAsync(request).ConfigureAwait(false);
         }
 
         public ProxyGetter()
         {
-            _client = new RestClient();
+            _client = new RestClient(new RestClientOptions() { FollowRedirects = false });
         }
 
         public byte[] GetTs(string uri)

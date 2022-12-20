@@ -1,3 +1,4 @@
+using Canale_Live.Controllers;
 using Canale_Live.Controllers.Getters;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IProxyGetter, ProxyGetter>();
+builder.Services.AddSingleton<IRedirectCollection, Redirects>();
 builder.Configuration.AddJsonFile("appsettings.json");
 
 var app = builder.Build();
@@ -40,3 +42,4 @@ app.MapControllerRoute(
     defaults: new { controller = "Media", action = "Index9" });
 
 app.Run();
+
