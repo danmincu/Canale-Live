@@ -22,7 +22,7 @@ namespace Canale_Live.Controllers.Getters
         public ProxyGetter(ILogger<ProxyGetter> logger)
         {
             _logger = logger;
-            _client = new RestClient(new RestClientOptions() { FollowRedirects = false });
+            _client = new RestClient(new RestClientOptions() { FollowRedirects = false, MaxTimeout = 2200 }); ;
         }
 
 
@@ -85,7 +85,7 @@ namespace Canale_Live.Controllers.Getters
 
         private void ApplyHeaders(RestRequest request)
         {
-            request.Timeout = 2500;
+            request.Timeout = 2200;
             request.AddHeader("accept", "*/*");
             request.AddHeader("accept-language", "en-US,en;q=0.9,ro;q=0.8");
             request.AddHeader("origin", "https://canale.live");

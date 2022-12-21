@@ -167,10 +167,14 @@ namespace Canale_Live.Controllers
                 if (flipped)
                     _logger.LogInformation($"Flip detected:{location} => {location1}");
 
-                if (code.StatusCode != System.Net.HttpStatusCode.NotFound && code.StatusCode != System.Net.HttpStatusCode.OK && code.StatusCode != System.Net.HttpStatusCode.Accepted)
+                if (code != null &&
+                    code.StatusCode != System.Net.HttpStatusCode.NotFound &&
+                    code.StatusCode != System.Net.HttpStatusCode.BadRequest &&
+                    code.StatusCode != System.Net.HttpStatusCode.OK && 
+                    code.StatusCode != System.Net.HttpStatusCode.Accepted)
                 {
                     _logger.LogError($"[{code.StatusCode}]:{location}");
-                    if (attempts++ < 3)
+                    if (attempts++ < 2)
                       goto repeat;
                 }
 
