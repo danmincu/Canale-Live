@@ -137,7 +137,7 @@ namespace Canale_Live.Controllers
 
                 
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ));
+                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), 6000);
 
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
 

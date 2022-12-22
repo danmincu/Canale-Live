@@ -6,8 +6,8 @@ namespace Canale_Live.Controllers.Getters
 
     public interface IProxyGetter : IDisposable
     {
-        string? RefererGetRequest(string uri, out RedirectInfo redirect);
-        string? RefererGetRequest(string uri);
+        string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000);
+        string? RefererGetRequest(string uri, int timeout = 3000);
         byte[] GetTs(string uri);
         Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask>? afterRequest = null);
     }
@@ -22,16 +22,16 @@ namespace Canale_Live.Controllers.Getters
         public ProxyGetter(ILogger<ProxyGetter> logger)
         {
             _logger = logger;
-            _client = new RestClient(new RestClientOptions() { FollowRedirects = false, MaxTimeout = 2200 }); ;
+            _client = new RestClient(new RestClientOptions() { FollowRedirects = false, MaxTimeout = 6000 }); ;
         }
 
 
-        public string? RefererGetRequest(string uri)
+        public string? RefererGetRequest(string uri, int timeout = 3000)
         {
-            return this.RefererGetRequest(uri, out RedirectInfo redirect);
+            return this.RefererGetRequest(uri, out RedirectInfo redirect, timeout);
         }
 
-        public string? RefererGetRequest(string uri, out RedirectInfo redirect)
+        public string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000)
         {
             var attempts = 0;
             redirect = null;
@@ -65,7 +65,7 @@ namespace Canale_Live.Controllers.Getters
         {
             _logger.LogInformation($"fetting TS stream: {uri}");
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
-            this.ApplyHeaders(request);
+            this.ApplyHeaders(request, 4000);
 
             if (afterRequest != null)
             {
@@ -83,9 +83,9 @@ namespace Canale_Live.Controllers.Getters
             return _client!.DownloadData(request);
         }
 
-        private void ApplyHeaders(RestRequest request)
+        private void ApplyHeaders(RestRequest request, int timeout = 3000)
         {
-            request.Timeout = 2200;
+            request.Timeout = timeout;
             request.AddHeader("accept", "*/*");
             request.AddHeader("accept-language", "en-US,en;q=0.9,ro;q=0.8");
             request.AddHeader("origin", "https://canale.live");

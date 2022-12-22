@@ -5,9 +5,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Canale_Live</RootNamespace>
+	<UserSecretsId>91ede3de-b1be-4a46-ae2b-8dba2607fc7d</UserSecretsId>
+	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="7.0.1" />
     <PackageReference Include="RestSharp" Version="108.0.3" />
   </ItemGroup>
