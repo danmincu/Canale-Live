@@ -34,13 +34,16 @@ namespace Canale_Live.Controllers
         private readonly IProxyGetter _proxy;
         private readonly IConfiguration _configuration;
         private readonly IRedirectCollection _redirectCollection;
+        private string[] rotate = new string[] { "1", "3", "4", "5", "6" };
+        private Random _random;
 
-        public MediaController(ILogger<HomeController> logger, IProxyGetter proxy, IConfiguration configuration, IRedirectCollection redirectCollection)
+    public MediaController(ILogger<HomeController> logger, IProxyGetter proxy, IConfiguration configuration, IRedirectCollection redirectCollection)
         {
             _logger = logger;
             _proxy = proxy;
             _configuration = configuration;
-            _redirectCollection = redirectCollection;            
+            _redirectCollection = redirectCollection;
+            _random = new Random(DateTime.Now.Millisecond);
         }
 
         public IActionResult? Index4(string a, string b, string c, string? d)
@@ -132,8 +135,9 @@ namespace Canale_Live.Controllers
                     a = media_redirects.ToA;
                 }
 
+                
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl);
+                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ));
 
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
 
