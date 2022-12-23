@@ -6,8 +6,8 @@ namespace Canale_Live.Controllers.Getters
 
     public interface IProxyGetter : IDisposable
     {
-        string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000);
-        string? RefererGetRequest(string uri, int timeout = 3000);
+        string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000, int retryCount = 2);
+        string? RefererGetRequest(string uri, int timeout = 3000, int retryCount = 2);
         byte[] GetTs(string uri);
         Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask>? afterRequest = null);
     }
@@ -26,18 +26,18 @@ namespace Canale_Live.Controllers.Getters
         }
 
 
-        public string? RefererGetRequest(string uri, int timeout = 3000)
+        public string? RefererGetRequest(string uri, int timeout = 3000, int retryCount = 2)
         {
-            return this.RefererGetRequest(uri, out RedirectInfo redirect, timeout);
+            return this.RefererGetRequest(uri, out RedirectInfo redirect, timeout, retryCount);
         }
 
-        public string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000)
+        public string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000, int retryCount = 2)
         {
             var attempts = 0;
             redirect = null;
             //var client = new RestClient(new RestClientOptions() { FollowRedirects = false });
             tryagain: var request = new RestRequest(uri, Method.Get);
-            this.ApplyHeaders(request);
+            this.ApplyHeaders(request, timeout);
             RestResponse response = _client.Execute(request);
 
             if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved)
@@ -47,14 +47,14 @@ namespace Canale_Live.Controllers.Getters
                 redirect = new RedirectInfo { FromUrl = uri, ToUrl = newUri };
                 uri = newUri;
                 request = new RestRequest(newUri, Method.Get);
-                this.ApplyHeaders(request);
+                this.ApplyHeaders(request, timeout);
                 response = _client.Execute(request);
             }
 
             if (response.StatusCode != System.Net.HttpStatusCode.OK && response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {
                 _logger.LogError($"[{response.StatusCode}]:{uri}");
-                if (attempts++ < 2)
+                if (++attempts < retryCount)
                  goto tryagain;
             }
             _logger.LogInformation($"fetting Info stream: {uri}");

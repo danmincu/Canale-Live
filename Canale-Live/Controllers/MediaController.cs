@@ -11,21 +11,32 @@ namespace Canale_Live.Controllers
     {
         private ConcurrentDictionary<string, RedirectInfo> _mediaRedirects;
         private ConcurrentDictionary<string, bool> _mediaFlips;
+        private ConcurrentDictionary<string, string> _domainsCache;
+        
         public Redirects()
         {
             _mediaRedirects = new ConcurrentDictionary<string, RedirectInfo>();
             _mediaFlips = new ConcurrentDictionary<string, bool>();
+            _domainsCache = new ConcurrentDictionary<string, string>();
         }
         
 
         public ConcurrentDictionary<string, RedirectInfo> RedirCollection { get { return _mediaRedirects; } }
         public ConcurrentDictionary<string, bool> MediaFlips { get { return _mediaFlips; } }
+
+        public ConcurrentDictionary<string, string> DomainsCache { get { return _domainsCache; } }
     }
 
     public interface IRedirectCollection
     {
         ConcurrentDictionary<string, RedirectInfo> RedirCollection { get; }
         ConcurrentDictionary<string, bool> MediaFlips { get; }
+
+        /// <summary>
+        /// cache the domains in case it fails to fetch the proper domain
+        /// </summary>
+        ConcurrentDictionary<string, string> DomainsCache { get; }
+
     } 
 
     public class MediaController : Controller
@@ -137,7 +148,20 @@ namespace Canale_Live.Controllers
 
                 
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), 6000);
+                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), 500, 2);
+                if (!string.IsNullOrEmpty(domain))
+                {
+                    this._redirectCollection.DomainsCache.AddOrUpdate(b, domain, (b, nv) => nv = domain);
+                }
+                else
+                {
+                    if (_redirectCollection.DomainsCache.TryGetValue(b, out var cachedDomain))
+                    {
+                        domain = cachedDomain;
+                    }
+                    else
+                        domain = _redirectCollection.DomainsCache.Values.FirstOrDefault();
+                }
 
                 var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
 
@@ -188,25 +212,6 @@ namespace Canale_Live.Controllers
 
             return NotFound();
         }
-
-
-        //public FileContentResult Index_not_efficient(string a, string b, string c, string d, string e, string f, string g, string h, string i)
-        //{
-        //    var context = this.ControllerContext;
-
-        //    if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
-        //    {
-        //        var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-        //        var domain = _proxy.RefererGetRequest(domainUrl);
-        //        var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-        //        var binaryContent = _proxy.GetTs(location);
-
-        //        if (binaryContent != null)
-        //            return File(binaryContent, "application/octet-stream");
-        //    }
-
-        //    return null;
-        //}
 
     }
 }
