@@ -46,5 +46,7 @@ app.MapControllerRoute(
     pattern: "{controller=Media}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}",
     defaults: new { controller = "Media", action = "Index9" });
 
+//System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("http://localhost:5000") { UseShellExecute = true });
+
 app.Run();
 
