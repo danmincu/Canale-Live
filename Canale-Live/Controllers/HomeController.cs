@@ -8,15 +8,6 @@ namespace Canale_Live.Controllers
     {
         Dictionary<string, string> _channels;
         bool _forceHttps;
-        //    = new Dictionary<string, string>()
-        //{ {"8", "TVR1" },
-        //  {"9", "TVR2" },
-        //  {"eantena1", "Antena 1" },
-        //  {"antena3", "Antena 3" },
-        //  {"protv", "Pro TV" },
-        //  {"ptvi", "Pro TV Int" },
-        //  {"porno", "Vixen(xxx)" }
-        //};
 
         private readonly ILogger<HomeController> _logger;
 

@@ -47,14 +47,24 @@ namespace Canale_Live.Controllers
         private readonly IRedirectCollection _redirectCollection;
         private string[] rotate = new string[] { "1", "3", "4", "5", "6" };
         private Random _random;
+        private string _entryPoint;
+        private int _getDomainTimeout;
+        private int _getDomainRetryCount;
+        private readonly int _getTsTimeout;
+        private readonly int _getTsRetryCount;
 
-    public MediaController(ILogger<HomeController> logger, IProxyGetter proxy, IConfiguration configuration, IRedirectCollection redirectCollection)
+        public MediaController(ILogger<HomeController> logger, IProxyGetter proxy, IConfiguration configuration, IRedirectCollection redirectCollection)
         {
             _logger = logger;
             _proxy = proxy;
             _configuration = configuration;
             _redirectCollection = redirectCollection;
             _random = new Random(DateTime.Now.Millisecond);
+            _entryPoint = _configuration.GetValue<string>("EntryPointDomain") ?? "https://zcri.openhd.lol";
+            _getDomainTimeout = _configuration.GetValue<int?>("GetDomainTimeout") ?? 500;
+            _getDomainRetryCount = _configuration.GetValue<int?>("GetDomainRetryCount") ?? 2;
+            _getTsTimeout = _configuration.GetValue<int?>("GetTsTimeout") ?? 4000;
+            _getTsRetryCount = _configuration.GetValue<int?>("GetTsRetryCount") ?? 2;
         }
 
         public IActionResult? Index4(string a, string b, string c, string? d)
@@ -64,7 +74,7 @@ namespace Canale_Live.Controllers
 
             if (d == null && c.Contains("index", StringComparison.InvariantCultureIgnoreCase))
             {
-                var index = _proxy.RefererGetRequest($"https://zcri.openhd.lol/{a}/{b}/{c}", out RedirectInfo mediaRedirect);
+                var index = _proxy.RefererGetRequest($"{_entryPoint}/{a}/{b}/{c}", out RedirectInfo mediaRedirect);
                 if (mediaRedirect != null)
                 {
                     mediaRedirect.A = a;
@@ -96,12 +106,23 @@ namespace Canale_Live.Controllers
 
             if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && d.Contains("m3u8", StringComparison.InvariantCultureIgnoreCase))
             {
+                // set default
+                var newDomain = "https://webdi.openhd.lol";
                 if (_redirectCollection.RedirCollection.ContainsKey(b))
                 {
                     var media_redirects = _redirectCollection.RedirCollection[b];
                     a = media_redirects.ToA;
+                    try
+                    {
+                        var uri = new Uri(media_redirects.ToUrl);
+                        newDomain = $"{uri.Scheme}://{uri.Authority}";
+                    }
+                    catch
+                    {
+
+                    }
                 }
-                var tracks = _proxy.RefererGetRequest($"https://webdi.openhd.lol/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect);
+                var tracks = _proxy.RefererGetRequest($"{newDomain}/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect);
                 //var replacedTracks = ReplaceTracks(tracks);
                 return Content(tracks!);
                 //return Content(replacedTracks);
@@ -148,7 +169,7 @@ namespace Canale_Live.Controllers
 
                 
                 var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), 500, 2);
+                var domain = _proxy.RefererGetRequest(domainUrl!.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), _getDomainTimeout, _getDomainRetryCount);
                 if (!string.IsNullOrEmpty(domain))
                 {
                     this._redirectCollection.DomainsCache.AddOrUpdate(b, domain, (b, nv) => nv = domain);
@@ -176,13 +197,13 @@ namespace Canale_Live.Controllers
                       return new ValueTask(Task.FromResult<HttpResponseMessage>(h));
                 };
                
-                var binaryContent = await _proxy.GetTss(location, func).ConfigureAwait(false);
+                var binaryContent = await _proxy.GetTss(location, func, _getTsTimeout).ConfigureAwait(false);
 
                 bool flipped = false;
                 var location1 = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
                 if (code?.StatusCode == System.Net.HttpStatusCode.NotFound && (!_redirectCollection.MediaFlips.TryGetValue(b, out bool val1) || !val1))
                 {
-                    binaryContent = await _proxy.GetTss(location1, func).ConfigureAwait(false);
+                    binaryContent = await _proxy.GetTss(location1, func, _getTsTimeout).ConfigureAwait(false);
                     if (code.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         _redirectCollection.MediaFlips.TryAdd(b, true);
@@ -202,7 +223,7 @@ namespace Canale_Live.Controllers
                     code.StatusCode != System.Net.HttpStatusCode.Accepted)
                 {
                     _logger.LogError($"[{code.StatusCode}]:{location}");
-                    if (attempts++ < 2)
+                    if (attempts++ < _getTsRetryCount)
                       goto repeat;
                 }
 

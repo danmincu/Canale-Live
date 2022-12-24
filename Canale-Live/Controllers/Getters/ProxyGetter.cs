@@ -8,8 +8,8 @@ namespace Canale_Live.Controllers.Getters
     {
         string? RefererGetRequest(string uri, out RedirectInfo redirect, int timeout = 3000, int retryCount = 2);
         string? RefererGetRequest(string uri, int timeout = 3000, int retryCount = 2);
-        byte[] GetTs(string uri);
-        Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask>? afterRequest = null);
+        //byte[] GetTs(string uri);
+        Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask>? afterRequest = null, int timeout=4000);
     }
 
     public class ProxyGetter : IProxyGetter
@@ -61,11 +61,11 @@ namespace Canale_Live.Controllers.Getters
             return response?.Content?.ToString();
         }
 
-        public async Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null)
+        public async Task<Stream?> GetTss(string uri, Func<HttpResponseMessage, ValueTask> afterRequest = null, int timeout = 4000)
         {
             _logger.LogInformation($"fetting TS stream: {uri}");
             var request = new RestRequest(uri.Replace(".ts", ".js"), Method.Get);
-            this.ApplyHeaders(request, 4000);
+            this.ApplyHeaders(request, timeout);
 
             if (afterRequest != null)
             {
@@ -76,12 +76,12 @@ namespace Canale_Live.Controllers.Getters
         }
 
 
-        public byte[] GetTs(string uri)
-        {
-            var request = new RestRequest(uri, Method.Get);
-            this.ApplyHeaders(request);
-            return _client!.DownloadData(request);
-        }
+        //public byte[] GetTs(string uri)
+        //{
+        //    var request = new RestRequest(uri, Method.Get);
+        //    this.ApplyHeaders(request);
+        //    return _client!.DownloadData(request);
+        //}
 
         private void ApplyHeaders(RestRequest request, int timeout = 3000)
         {
