@@ -8,6 +8,7 @@ namespace Canale_Live.Controllers
     {
         Dictionary<string, string> _channels;
         bool _forceHttps;
+        bool _forceHttp;
 
         private readonly ILogger<HomeController> _logger;
 
@@ -15,7 +16,8 @@ namespace Canale_Live.Controllers
         {
             _logger = logger;
             _channels = config.GetSection("Channels").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>() { { "8", "TVR1" } };
-            _forceHttps =(bool?)config.GetValue<bool>("forceHttps") ?? false;
+            _forceHttps =(bool?)config.GetValue<bool>("ForceHttps") ?? false;
+            _forceHttp = (bool?)config.GetValue<bool>("ForceHttp") ?? false;
         }
 
         public IActionResult Index(string? id)
@@ -24,6 +26,8 @@ namespace Canale_Live.Controllers
             var key = id ?? "8";
             ViewData["channelId"] = key;
             var scheme = _forceHttps ? "https" : Request.Scheme;
+            if (_forceHttp)
+              scheme = "http";
             var location = new Uri($"{scheme}://{Request.Host}{Request.Path}{Request.QueryString}");
             ChannelModel channel;
             if (_channels.ContainsKey(key))
