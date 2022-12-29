@@ -4,9 +4,7 @@ using System.Collections.Concurrent;
 using System.Text;
 
 namespace Canale_Live.Controllers
-{
-
-
+{    
     public class Redirects: IRedirectCollection
     {
         private ConcurrentDictionary<string, RedirectInfo> _mediaRedirects;
@@ -74,7 +72,7 @@ namespace Canale_Live.Controllers
 
             if (d == null && c.Contains("index", StringComparison.InvariantCultureIgnoreCase))
             {
-                var index = _proxy.RefererGetRequest($"{_entryPoint}/{a}/{b}/{c}", out RedirectInfo mediaRedirect);
+                var index = _proxy.RefererGetRequest($"{_entryPoint}/{a}/{b}/{c}", out RedirectInfo mediaRedirect, 5000, 5);
                 if (mediaRedirect != null)
                 {
                     mediaRedirect.A = a;
@@ -100,6 +98,7 @@ namespace Canale_Live.Controllers
                   
                     _redirectCollection.RedirCollection.AddOrUpdate(b, mediaRedirect, (k,v) => mediaRedirect);
                 }
+                _logger.LogDebug(index);
                 return Content(index);
             }
 
@@ -122,10 +121,9 @@ namespace Canale_Live.Controllers
 
                     }
                 }
-                var tracks = _proxy.RefererGetRequest($"{newDomain}/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect);
-                //var replacedTracks = ReplaceTracks(tracks);
+                var tracks = _proxy.RefererGetRequest($"{newDomain}/{a}/{b}/{c}/{d}", out RedirectInfo mediaRedirect, 5000, 5);
+                _logger.LogDebug(tracks);
                 return Content(tracks!);
-                //return Content(replacedTracks);
             }
 
             return null;

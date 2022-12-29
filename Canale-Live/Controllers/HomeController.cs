@@ -23,7 +23,7 @@ namespace Canale_Live.Controllers
         public IActionResult Index(string? id)
         {
             ViewData["channelIds"] = _channels;// from c in _channels.Keys select c;             
-            var key = id ?? "8";
+            var key = id ?? _channels.Keys.FirstOrDefault() ?? "8";
             ViewData["channelId"] = key;
             var scheme = _forceHttps ? "https" : Request.Scheme;
             if (_forceHttp)
