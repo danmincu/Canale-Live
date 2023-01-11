@@ -40,11 +40,12 @@ namespace Canale_Live.Controllers.Getters
             this.ApplyHeaders(request, timeout);
             RestResponse response = _client.Execute(request);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved)
+            if (response.StatusCode == System.Net.HttpStatusCode.MovedPermanently || response.StatusCode == System.Net.HttpStatusCode.Moved ||
+                response.StatusCode == System.Net.HttpStatusCode.TemporaryRedirect || response.StatusCode == System.Net.HttpStatusCode.Redirect)
             {
                 var newUri = (string)response?.Headers?.Where(h => h.Name == "Location")?.FirstOrDefault()?.Value;
                 _logger.LogInformation($"301 Redirect detected:{uri} => {newUri}");
-                redirect = new RedirectInfo { FromUrl = uri, ToUrl = newUri };
+                redirect = new RedirectInfo { FromUrl = new Uri(uri), ToUrl = new Uri(newUri) };
                 uri = newUri;
                 request = new RestRequest(newUri, Method.Get);
                 this.ApplyHeaders(request, timeout);

@@ -58,8 +58,8 @@ namespace Canale_Live.Controllers
             _configuration = configuration;
             _redirectCollection = redirectCollection;
             _random = new Random(DateTime.Now.Millisecond);
-            _entryPoint = _configuration.GetValue<string>("EntryPointDomain") ?? "https://zcri.openhd.lol";
-            _getDomainTimeout = _configuration.GetValue<int?>("GetDomainTimeout") ?? 500;
+            _entryPoint = _configuration.GetValue<string>("EntryPointDomain") ?? "https://cn.webtv1.lol";
+            _getDomainTimeout = _configuration.GetValue<int?>("GetDomainTimeout") ?? 1500;
             _getDomainRetryCount = _configuration.GetValue<int?>("GetDomainRetryCount") ?? 2;
             _getTsTimeout = _configuration.GetValue<int?>("GetTsTimeout") ?? 4000;
             _getTsRetryCount = _configuration.GetValue<int?>("GetTsRetryCount") ?? 2;
@@ -81,7 +81,7 @@ namespace Canale_Live.Controllers
 
                     try
                     {
-                        var uri = new Uri(mediaRedirect.ToUrl);
+                        var uri = mediaRedirect.ToUrl;
                         var localPath = uri.LocalPath;
                         var split = localPath.Trim('/').Split('/');
                         if (split.Length > 0)
@@ -106,14 +106,14 @@ namespace Canale_Live.Controllers
             if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && d.Contains("m3u8", StringComparison.InvariantCultureIgnoreCase))
             {
                 // set default
-                var newDomain = "https://webdi.openhd.lol";
+                var newDomain = _configuration.GetValue<string>("EntryPointDomain");
                 if (_redirectCollection.RedirCollection.ContainsKey(b))
                 {
                     var media_redirects = _redirectCollection.RedirCollection[b];
                     a = media_redirects.ToA;
                     try
                     {
-                        var uri = new Uri(media_redirects.ToUrl);
+                        var uri = media_redirects.ToUrl;
                         newDomain = $"{uri.Scheme}://{uri.Authority}";
                     }
                     catch
@@ -129,29 +129,6 @@ namespace Canale_Live.Controllers
             return null;
         }
 
-
-        //private string ReplaceTracks(string tracks)
-        //{
-        //    var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-        //    var domain = _proxy.RefererGetRequest(domainUrl);
-
-        //    var lines = tracks.Split("\n");
-        //    var sb = new StringBuilder();
-        //    foreach (var item in lines)
-        //    {
-        //        if (!item.StartsWith("#"))
-        //        {
-        //            var newLocation = $"https://{domain}/cdn/8/tracks-v1a1/{item}";
-        //            newLocation = newLocation.Replace(".ts", ".js");
-        //            sb.Append(newLocation);
-        //        }
-        //        else
-        //            sb.AppendLine(item);
-        //    }
-        //    return sb.ToString();
-        //}
-
-
         public async Task<IActionResult> Index9(string a, string b, string c, string d, string e, string f, string g, string h, string i)
         {
             var context = this.ControllerContext;
@@ -159,34 +136,45 @@ namespace Canale_Live.Controllers
 
             if (c.Contains("tracks", StringComparison.InvariantCultureIgnoreCase) && i.EndsWith("s", StringComparison.InvariantCulture))
             {
-             repeat:if (_redirectCollection.RedirCollection.ContainsKey(b))
+                var location = "";
+         repeat:if (_redirectCollection.RedirCollection.ContainsKey(b))
                 {
                     var media_redirects = _redirectCollection.RedirCollection[b];
+                    var redirTrack = $"{media_redirects.ToUrl.Scheme}://{media_redirects.ToUrl.Authority}/{media_redirects.ToA}/{media_redirects.ToB}/{c}/{d}/{e}/{f}/{g}/{h}/{i}";
+                    var isRedirect = _proxy.RefererGetRequest(redirTrack, out RedirectInfo trackRedirect, _getDomainTimeout, _getDomainRetryCount);
+                    if (trackRedirect != null)
+                    {
+                        location = trackRedirect.ToUrl.ToString();
+                    }
+
                     a = media_redirects.ToA;
                 }
 
-                
-                var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
-                var domain = _proxy.RefererGetRequest(domainUrl!.Replace("%%1%%", rotate[_random.Next(rotate.Length)] ), _getDomainTimeout, _getDomainRetryCount);
-                if (!string.IsNullOrEmpty(domain))
+                if (string.IsNullOrEmpty(location))
                 {
-                    this._redirectCollection.DomainsCache.AddOrUpdate(b, domain, (b, nv) => nv = domain);
-                }
-                else
-                {
-                    if (_redirectCollection.DomainsCache.TryGetValue(b, out var cachedDomain))
+                    var domainUrl = _configuration.GetValue<string>("MovingTargetDomain");
+                    var domain = _proxy.RefererGetRequest(domainUrl!.Replace("%%1%%", rotate[_random.Next(rotate.Length)]), _getDomainTimeout, _getDomainRetryCount);
+                    if (!string.IsNullOrEmpty(domain))
                     {
-                        domain = cachedDomain;
+                        this._redirectCollection.DomainsCache.AddOrUpdate(b, domain, (b, nv) => nv = domain);
                     }
                     else
-                        domain = _redirectCollection.DomainsCache.Values.FirstOrDefault();
-                }
+                    {
+                        if (_redirectCollection.DomainsCache.TryGetValue(b, out var cachedDomain))
+                        {
+                            domain = cachedDomain;
+                        }
+                        else
+                            domain = _redirectCollection.DomainsCache.Values.FirstOrDefault();
+                    }
 
-                var location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+                    location = $"https://{domain}/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
 
-                if (_redirectCollection.MediaFlips.TryGetValue(b, out bool val) && val)
-                {
-                    location = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+
+                    if (_redirectCollection.MediaFlips.TryGetValue(b, out bool val) && val)
+                    {
+                        location = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+                    }
                 }
 
                 HttpResponseMessage? code = null;
@@ -197,22 +185,22 @@ namespace Canale_Live.Controllers
                
                 var binaryContent = await _proxy.GetTss(location, func, _getTsTimeout).ConfigureAwait(false);
 
-                bool flipped = false;
-                var location1 = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
-                if (code?.StatusCode == System.Net.HttpStatusCode.NotFound && (!_redirectCollection.MediaFlips.TryGetValue(b, out bool val1) || !val1))
-                {
-                    binaryContent = await _proxy.GetTss(location1, func, _getTsTimeout).ConfigureAwait(false);
-                    if (code.StatusCode == System.Net.HttpStatusCode.OK)
-                    {
-                        _redirectCollection.MediaFlips.TryAdd(b, true);
-                        flipped = true;
-                    }
-                    else
-                        _redirectCollection.MediaFlips.TryAdd(b, false);
-                }
+                //bool flipped = false;
+                //var location1 = $"https://{a}.{domain}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}".Replace(".ts", ".js");
+                //if (code?.StatusCode == System.Net.HttpStatusCode.NotFound && (!_redirectCollection.MediaFlips.TryGetValue(b, out bool val1) || !val1))
+                //{
+                //    binaryContent = await _proxy.GetTss(location1, func, _getTsTimeout).ConfigureAwait(false);
+                //    if (code.StatusCode == System.Net.HttpStatusCode.OK)
+                //    {
+                //        _redirectCollection.MediaFlips.TryAdd(b, true);
+                //        flipped = true;
+                //    }
+                //    else
+                //        _redirectCollection.MediaFlips.TryAdd(b, false);
+                //}
 
-                if (flipped)
-                    _logger.LogInformation($"Flip detected:{location} => {location1}");
+                //if (flipped)
+                //    _logger.LogInformation($"Flip detected:{location} => {location1}");
 
                 if (code != null &&
                     code.StatusCode != System.Net.HttpStatusCode.NotFound &&

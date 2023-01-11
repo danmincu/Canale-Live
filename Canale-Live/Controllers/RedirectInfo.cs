@@ -2,9 +2,9 @@
 {
     public class RedirectInfo
     {
-        public string FromUrl { get; set; }
+        public Uri FromUrl { get; set; }
         
-        public string ToUrl { get; set; } 
+        public Uri ToUrl { get; set; } 
         
         public string A { get; set; }
         
